@@ -1,0 +1,12 @@
+version: '1.0'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: suggestion
+    volumes:
+      - ./:/var/www
+    ports:
+      - "9000:9000"

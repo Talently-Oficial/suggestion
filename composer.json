@@ -1,0 +1,33 @@
+{
+    "name": "talently/suggestion",
+    "version": "1.0.0",
+    "description": "Paquete para consumir la API de sugeridos.",
+    "type": "library",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Robert Steve, Paredes Quispe",
+            "email": "robert.paredes@outlook.com"
+        }
+    ],
+    "require": {
+        "php": "^7.2|^8.1",
+        "illuminate/support": "^6.0|^7.0|^8.0|^9.0",
+        "guzzlehttp/guzzle": "^6.3|^7.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Suggestion\\": "src/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Suggestion\\Providers\\SuggestionServiceProvider"
+            ],
+            "aliases": {
+                "Suggestion": "Suggestion\\Facades\\Suggestion"
+            }
+        }
+    }
+}
