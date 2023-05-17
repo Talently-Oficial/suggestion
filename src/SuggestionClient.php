@@ -60,7 +60,7 @@ class SuggestionClient
             'json' => [
                 'uuid' => $uuid,
                 'match_user_id' => $matchUserId,
-                'work_offer_ids' => $workOfferId,
+                'work_offer_id' => $workOfferId,
                 'action' => $action,
             ]
         ]);
