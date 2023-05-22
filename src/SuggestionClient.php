@@ -51,8 +51,8 @@ class SuggestionClient
                 $result = json_decode($response->getBody(), true);
 
                 return [
-                    'uuid' => $result['uuid'],
-                    'data' => $this->processData($result),
+                    'uuid' => $result['result']['uuid'],
+                    'data' => $this->processData($result['result']['results']),
                 ];
             }
 
@@ -129,11 +129,11 @@ class SuggestionClient
 
     }
 
-    private function processData(array $result): array
+    private function processData(array $suggestions): array
     {
 
         return [
-            'suggestions' => $this->processSuggestions(collect($result['results'])),
+            'suggestions' => $this->processSuggestions(collect($suggestions)),
         ];
     }
 
