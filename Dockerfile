@@ -2,12 +2,14 @@
 FROM php:7.4-fpm
 
 # Instalar dependencias
-RUN apt-get update && apt-get install -y git\
+RUN apt-get update && apt-get install -y \
+    bash \
     build-essential \
-    libzip-dev \
+    curl \
+    git \
     libonig-dev \
-    zip \
-    curl
+    libzip-dev \
+    zip
 
 # Instalar extensiones PHP
 RUN docker-php-ext-install mbstring zip exif pcntl
