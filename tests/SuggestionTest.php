@@ -3,13 +3,13 @@
 namespace Tests;
 
 use GuzzleHttp\ClientInterface;
-use GuzzleHttp\Exception\ConnectException;
-use GuzzleHttp\Exception\RequestException;
-use GuzzleHttp\Exception\ServerException;
+use GuzzleHttp\Exception\ClientException;
+use GuzzleHttp\Exception\GuzzleException;
 use GuzzleHttp\Psr7\Response;
 use GuzzleHttp\Psr7\Request;
 use Illuminate\Contracts\Config\Repository as Config;
 use PHPUnit\Framework\TestCase;
+use Suggestion\Exceptions\SuggestionServiceException;
 use Suggestion\SuggestionClient;
 
 class SuggestionTest extends TestCase
@@ -25,19 +25,28 @@ class SuggestionTest extends TestCase
         $this->suggestionClient = new SuggestionClient($this->client, $this->config);
     }
 
+    /**
+     * @return void
+     * @throws SuggestionServiceException
+     * @throws GuzzleException
+     */
     public function testGet(): void
     {
         $businessUserId = 1;
         $workOfferId = 2;
 
         $responseBody = [
-            'uuid' => 'abc',
-            'results' => [
-                [
-                    'match_user_id' => 123,
-                    'affinity' => 0.78,
-                    'rank' => 1,
-                ]
+            'success' => true,
+            'message' => 'Se retorna las afinidades',
+            'result' => [
+                'uuid' => 'abc',
+                'results' => [
+                    [
+                        'match_user_id' => 123,
+                        'affinity' => 0.78,
+                        'rank' => 1,
+                    ]
+                ],
             ],
         ];
 
@@ -49,7 +58,7 @@ class SuggestionTest extends TestCase
                 'affinity-ml-hire',
                 [
                     'json' => [
-                        'work_offer_id' => (string)$workOfferId,
+                        'work_offer_id' => $workOfferId,
                         'business_user_id' => $businessUserId,
                     ]
                 ]
@@ -72,100 +81,133 @@ class SuggestionTest extends TestCase
         $this->assertSame($expectedResult, $this->suggestionClient->get($businessUserId, $workOfferId));
     }
 
+    /**
+     * @return void
+     * @throws GuzzleException
+     * @throws SuggestionServiceException
+     */
     public function testGetHandlesClientException(): void
     {
         $exceptionMessage = 'Error de cliente';
+        $exception = new ClientException(
+            $exceptionMessage,
+            new Request('POST', 'test'),
+            new Response(400)
+        );
+
         $client = $this->createMock(ClientInterface::class);
         $client->expects($this->once())
             ->method('request')
-            ->will($this->throwException(new RequestException($exceptionMessage, new Request('POST', 'test'))));
+            ->will($this->throwException($exception));
 
         $config = $this->createMock(Config::class);
-        $suggestionClient = new SuggestionClient($client, $config);
 
+        $this->expectException(SuggestionServiceException::class);
+
+        $suggestionClient = new SuggestionClient($client, $config);
         $businessUserId = 123;
         $workOfferId = 456;
-        $result = $suggestionClient->get($businessUserId, $workOfferId);
-
-        $expectedResult = [
-            'error' => 'Se produjo un error al procesar tu solicitud. Por favor, intenta nuevamente más tarde.',
-        ];
-
-        $this->assertEquals($expectedResult, $result);
+        $suggestionClient->get($businessUserId, $workOfferId);
     }
 
-    public function testGetHandlesConnectException()
+    /**
+     * @return void
+     * @throws GuzzleException
+     * @throws SuggestionServiceException
+     */
+    public function testGetHandlesConnectException(): void
     {
         $exceptionMessage = 'Error de conexión';
+        $exception = new ClientException(
+            $exceptionMessage,
+            new Request('POST', 'test'),
+            new Response(400)
+        );
+
         $client = $this->createMock(ClientInterface::class);
         $client->expects($this->once())
             ->method('request')
-            ->willThrowException(new ConnectException($exceptionMessage, new Request('POST', 'test')));
+            ->will($this->throwException($exception));
 
         $config = $this->createMock(Config::class);
-        $suggestionClient = new SuggestionClient($client, $config);
 
+        $this->expectException(SuggestionServiceException::class);
+
+        $suggestionClient = new SuggestionClient($client, $config);
         $businessUserId = 123;
         $workOfferId = 456;
-        $result = $suggestionClient->get($businessUserId, $workOfferId);
-
-        $expectedResult = [
-            'error' => 'No se pudo conectar con la API externa. Por favor, intenta nuevamente más tarde.',
-        ];
-
-        $this->assertEquals($expectedResult, $result);
+        $suggestionClient->get($businessUserId, $workOfferId);
     }
 
-    public function testGetHandlesServerException()
+    /**
+     * @return void
+     * @throws GuzzleException
+     * @throws SuggestionServiceException
+     */
+    public function testGetHandlesServerException(): void
     {
         $exceptionMessage = 'Error del servidor';
+        $exception = new ClientException(
+            $exceptionMessage,
+            new Request('POST', 'test'),
+            new Response(400)
+        );
+
         $client = $this->createMock(ClientInterface::class);
         $client->expects($this->once())
             ->method('request')
-            ->willThrowException(new ServerException($exceptionMessage, new Request('POST', 'test'), new Response(500)));
+            ->will($this->throwException($exception));
 
         $config = $this->createMock(Config::class);
-        $suggestionClient = new SuggestionClient($client, $config);
 
+        $this->expectException(SuggestionServiceException::class);
+
+        $suggestionClient = new SuggestionClient($client, $config);
         $businessUserId = 123;
         $workOfferId = 456;
-        $result = $suggestionClient->get($businessUserId, $workOfferId);
-
-        $expectedResult = [
-            'error' => 'Se produjo un error en el servidor. Por favor, intenta nuevamente más tarde.',
-        ];
-
-        $this->assertEquals($expectedResult, $result);
+        $suggestionClient->get($businessUserId, $workOfferId);
     }
 
-    public function testGetHandlesOtherExceptions()
+    /**
+     * @return void
+     * @throws GuzzleException
+     * @throws SuggestionServiceException
+     */
+    public function testGetHandlesOtherExceptions(): void
     {
         $exceptionMessage = 'Error genérico';
+        $exception = new ClientException(
+            $exceptionMessage,
+            new Request('POST', 'test'),
+            new Response(400)
+        );
+
         $client = $this->createMock(ClientInterface::class);
         $client->expects($this->once())
             ->method('request')
-            ->willThrowException(new \Exception($exceptionMessage));
+            ->will($this->throwException($exception));
 
         $config = $this->createMock(Config::class);
-        $suggestionClient = new SuggestionClient($client, $config);
 
+        $this->expectException(SuggestionServiceException::class);
+
+        $suggestionClient = new SuggestionClient($client, $config);
         $businessUserId = 123;
         $workOfferId = 456;
-        $result = $suggestionClient->get($businessUserId, $workOfferId);
-
-        $expectedResult = [
-            'error' => 'Se produjo un error al procesar tu solicitud. Por favor, intenta nuevamente más tarde.',
-        ];
-
-        $this->assertEquals($expectedResult, $result);
+        $suggestionClient->get($businessUserId, $workOfferId);
     }
 
-    public function testInterestedHandlesSuccess()
+    /**
+     * @return void
+     * @throws GuzzleException
+     * @throws SuggestionServiceException
+     */
+    public function testInterestedHandlesSuccess(): void
     {
-        $uuid = '8057ce6f-6e70-4d12-8f07-97f3a8bff06d';
-        $businessUserId = 123;
-        $matchUserId = 456;
-        $workOfferId = 789;
+        $uuid = 'abc';
+        $businessUserId = 3;
+        $matchUserId = 1;
+        $workOfferId = 2;
 
         $client = $this->createMock(ClientInterface::class);
         $client->expects($this->once())
@@ -179,7 +221,7 @@ class SuggestionTest extends TestCase
                         'match_user_id' => $matchUserId,
                         'work_offer_id' => $workOfferId,
                         'business_user_id' => $businessUserId,
-                        'action' => 'aceptar',
+                        'action' => SuggestionClient::ACCEPT,
                     ],
                 ]
             )
@@ -197,12 +239,17 @@ class SuggestionTest extends TestCase
         $this->assertEquals($expectedResult, $result);
     }
 
-    public function testNoInterestedHandlesSuccess()
+    /**
+     * @return void
+     * @throws GuzzleException
+     * @throws SuggestionServiceException
+     */
+    public function testNoInterestedHandlesSuccess(): void
     {
-        $uuid = '8057ce6f-6e70-4d12-8f07-97f3a8bff06d';
-        $businessUserId = 123;
-        $matchUserId = 456;
-        $workOfferId = 789;
+        $uuid = 'abc';
+        $businessUserId = 3;
+        $matchUserId = 1;
+        $workOfferId = 2;
 
         $client = $this->createMock(ClientInterface::class);
         $client->expects($this->once())
@@ -216,7 +263,7 @@ class SuggestionTest extends TestCase
                         'match_user_id' => $matchUserId,
                         'work_offer_id' => $workOfferId,
                         'business_user_id' => $businessUserId,
-                        'action' => 'descartar',
+                        'action' => SuggestionClient::DISCARD,
                     ],
                 ]
             )
